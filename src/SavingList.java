@@ -50,9 +50,9 @@ class SavingList {
         return list.get(sz).score.get(i);
     }
 
-    void plus(int i, boolean isdec) {
+    void plus(int i, boolean isDec) {
         try {
-            if (isdec)
+            if (isDec)
                 list.get(sz).score.set(i, list.get(sz).score.get(i) - 1);
             else
 
@@ -68,7 +68,7 @@ class SavingList {
     public String toString() {
         StringBuilder ret = new StringBuilder("");
         for (int i = 0; i < list.size(); i++)
-            ret.append("Game ").append(i).append("\n").append(list.get(i)).append("\n");
+            ret.append("Game ").append(i).append(" ").append(list.get(i)).append("\n");
         return ret.toString();
     }
 
@@ -114,10 +114,10 @@ class SavingList {
 
         @Override
         public String toString() {
-            StringBuilder ret = new StringBuilder("{");
+            StringBuilder ret = new StringBuilder("\n");
             for (int i = 0; i < names.size(); i++)
-                ret.append(names.get(i)).append(": ").append(score.get(i)).append("\n");
-            ret.append("}");
+                ret.append("    ").append(names.get(i)).append(": ").append(score.get(i)).append("\n");
+            //ret.append("}");
             return ret.toString();
         }
     }

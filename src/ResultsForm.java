@@ -26,14 +26,14 @@ class ResultsForm extends JPanel {
         String newName;
         while (true) {
             newName = JOptionPane.showInputDialog(Main.getBaseForm(), "Введите имя игрока");
+            if (newName == null || newName.equals(""))
+                return;
             if (newName.length() > 46) {
                 JOptionPane.showMessageDialog(Main.getBaseForm(), "Длина имени не должна превышать 46 символов.\n Попробуйте ещё раз");
                 continue;
             }
             break;
         }
-        if (newName.equals(""))
-            return;
         playerTable.addPlayer(newName);
         number++;
         Main.getBaseForm().requestFocus();
@@ -62,21 +62,21 @@ class ResultsForm extends JPanel {
         Main.getBaseForm().requestFocus();
     }
 
-    void panelClickRFID(int id, boolean isdec) {
+    void panelClickRFID(int id, boolean isDec) {
         if (playerTable.list.size() <= id)
             return;
-        panelClickRF(playerTable.list.get(id), isdec);
+        panelClickRF(playerTable.list.get(id), isDec);
     }
 
-    private void panelClickRF(PlayerTable.PlayerPanel panel, boolean isdec) {
+    private void panelClickRF(PlayerTable.PlayerPanel panel, boolean isDec) {
         if (deleting)
         {
             playerTable.deletePlayer((int)panel.getClientProperty("id"));
             deleting = false;
         }
         else {
-            savingList.plus((int)panel.getClientProperty("id"), isdec);
-            if (isdec) {
+            savingList.plus((int)panel.getClientProperty("id"), isDec);
+            if (isDec) {
                 panel.intScore--;
                 panel.score.setText("" + panel.intScore);
             }
@@ -174,11 +174,9 @@ class ResultsForm extends JPanel {
 
     private class PlayerTable extends JPanel {
         private ArrayList<PlayerPanel> list;
-        private int id;
 
         PlayerTable() {
             list = new ArrayList<>();
-            id = 0;
             int w = Main.getWidth() * (WID - 1) / 2 / WID - 5,  h = Main.getHeight() * 3 / 5 - 5;
             Dimension dim = new Dimension(w, h);
             setMinimumSize(dim);
@@ -191,15 +189,17 @@ class ResultsForm extends JPanel {
         }
 
         void addPlayer(String name) {
-            list.add(new PlayerPanel(name));
+            PlayerPanel p =new PlayerPanel(name);
+            list.add(p);
             savingList.addPlayer(name);
-            add(list.get(id));
-            id++;
+            add(p);
+            p.setVisible(true);
             updateScore();
         }
 
         void deletePlayer(int did) {
             //int nid = players.indexOf(list.get(did).getClientProperty("id"));
+            list.get(did).setVisible(false);
             remove(list.get(did));
             list.remove(did);
             for (int i = did; i < list.size(); i++) {
@@ -207,26 +207,28 @@ class ResultsForm extends JPanel {
                 list.get(i).setName(list.get(i).getName());
             }
             savingList.deletePlayer(did);
-            id--;
             number--;
             updateScore();
         }
 
         void newGame() {
-            for (int i = 0; i < number; i++)
-                ResultsForm.this.remove(list.get(i));
+            while (number > 0) {
+                deleting = true;
+                panelClickRFID(0, false);
+                //ResultsForm.this.remove(list.get(0));
+            }
             savingList.newGame();
-            id = 0;
             number = 0;
         }
 
         void updateScore() {
-            for (int i = 0; i < id; i++)
+            for (int i = 0; i < number; i++)
                 list.get(i).setScore(savingList.getScore(i));
         }
 
         private class PlayerPanel extends JPanel {
             //int x, y;
+            String realName;
             JTextArea name;
             JLabel score;
             int intScore;
@@ -235,11 +237,30 @@ class ResultsForm extends JPanel {
                 putClientProperty("id", number);
                 setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
                 setBorder(new EmptyBorder(5, 5, 5, 5));
+                realName = name;
                 this.name = new JTextArea(getName(name));
                 this.name.setBackground(Color.getColor("#CCCCCC"));
                 this.name.setFont(Main.getFont());
                 this.name.setLineWrap(true);
+                this.name.setEnabled(false);
+                this.name.setDisabledTextColor(Color.black);
+                MouseListener mouseListener = new MouseListener() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        panelClickRF(PlayerPanel.this, e.isAltDown() | e.isControlDown() | e.isShiftDown());
+                    }
+                    @Override
+                    public void mousePressed(MouseEvent e) {}
+                    @Override
+                    public void mouseReleased(MouseEvent e) {}
+                    @Override
+                    public void mouseEntered(MouseEvent e) {}
+                    @Override
+                    public void mouseExited(MouseEvent e) {}
+                };
+                this.name.addMouseListener(mouseListener);
                 add(this.name);
+
                 score = new JLabel("0");
                 score.setFont(Main.getFont());
                 add(score);
@@ -253,36 +274,6 @@ class ResultsForm extends JPanel {
                 setMaximumSize(dim);
                 setPreferredSize(dim);
                 setVisible(true);
-                MouseListener mouseListener = new MouseListener() {
-                    @Override
-                    public void mouseClicked(MouseEvent e) {
-                        panelClickRF(PlayerPanel.this, false);
-                        /*if (deleting)
-                        {
-                            deletePlayer((int)getClientProperty("id"));
-                            deleting = false;
-                        }
-                        else {
-                            savingList.plus((int)getClientProperty("id"));
-                            intScore++;
-                            score.setText("" + intScore);
-                            Main.getBaseForm().changeWord();
-                        }
-                        playerMenu.deletePlayer.setBackground(new JButton().getBackground());*/
-                    }
-                    @Override
-                    public void mousePressed(MouseEvent e) {
-                    }
-                    @Override
-                    public void mouseReleased(MouseEvent e) {
-                    }
-                    @Override
-                    public void mouseEntered(MouseEvent e) {
-                    }
-                    @Override
-                    public void mouseExited(MouseEvent e) {
-                    }
-                };
                 addMouseListener(mouseListener);
             }
 
@@ -291,7 +282,7 @@ class ResultsForm extends JPanel {
             }
 
             public String getName() {
-                return getName(name.getText());
+                return getName(realName);
             }
 
             public void setName(String name)
